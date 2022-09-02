@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>War Field</title>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <!-- <link rel="stylesheet" href="./stylesheet/login.css"> -->
+    <!-- <link rel="stylesheet" href="./libs/css/bootstrap.min.css"> -->
+    <style>
+        body,header,p,section,div {
+            margin: 0;
+            padding: 0;
+            font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+        }
+
+        body {
+            height: 100vh;
+        }
+
+        header {
+            height: 10vh;
+        }
+        section {
+            height: 80vh;
+            font-size: 1rem;
+            width: 100%;
+        }
+        footer {
+            height: 10vh;
+            font-size: .8rem;
+        }
+        .css-title {
+            text-align: center;
+            font-size: 2rem;
+        }
+    </style>
+</head>
+<body class="container">
+    <header class="row align-items-center text-center">
+        <div class="col">
+            <p class="">2022 闪马秋冬季产品发布会</p>
+            <p class="css-title">独有千秋</p>
+        </div>
+    </header>
+    <section class="row align-items-center">
+        <div id="js_reportbody" class="col-12 text-center">
+            <div style="color:brown; font-size: 2rem; margin-bottom: 5rem;">战争已结束</div>
+            <div id="js_userinfo" style="color:#664d03; margin-bottom: 1.5rem;"></div>
+            <div style="color:#41464b;">您的最终得分:</div>
+            <div id="js_score" style="color:#664d03; font-size: 1.5rem; margin-bottom: 2rem;"></div>
+            <div style="color:#41464b;">您的最终排名:</div>
+            <div>第 <span id="js_order" style="color:#664d03; font-size: 2rem"></span> 名</div>
+        </div>
+    </section>
+    <footer class="row align-items-end text-center">
+        <div>Copyright ©2022 闪马文娱</div>
+    </footer>
+
+<script>
+    const FIELD = (new URLSearchParams(window.location.href.split('?')[1])).get('field');
+    let headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    let postBody = {
+        method: 'POST',
+        headers: headers,
+        body: null
+    };
+
+    let USERINFO = null;
+    let QB = null;
+    let INDEX = 0;
+    let STATUS = false;
+
+    (() => {
+        'use strict'
+
+        if(localStorage.id == undefined || localStorage.name == undefined) {    // 用户未注册
+            window.location.href = '/client/regist';
+        } else {
+            USERINFO = {
+                id: localStorage.id,
+                name: localStorage.name
+            }
+        }
+
+        checkuser();
+        getReport();
+    })()
+
+
+    function checkuser() {
+        fetch(`/service/checkuser?id=${USERINFO.id}`).then(e => e.json()).then(res => {
+            if(res == false) window.location.href = '/client/regist?refresh=true';
+        });
+    }
+    
+
+    function getReport(){
+        fetch('/service/namelist').then(e => e.json()).then(res => {
+            let ids = Object.keys(res);
+            let order = 1;
+            for(let i=0; i<ids.length; i++) {
+                if(res[ids[i]].score[FIELD] > res[USERINFO.id].score[FIELD]) {
+                    order++;
+                }
+            }
+            document.querySelector('#js_userinfo').innerHTML = `${USERINFO.name}（ ${USERINFO.id}）`;
+            document.querySelector('#js_score').innerHTML = res[USERINFO.id].score[FIELD];
+            document.querySelector('#js_order').innerHTML = order;
+        });
+    }
+
+</script>
+</body>
+</html>

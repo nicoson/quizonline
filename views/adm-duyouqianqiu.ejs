@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <style>
+        body,header,p,section,div {
+            margin: 0;
+            padding: 0;
+            font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+        }
+
+        body {
+            height: 100vh;
+        }
+
+        header {
+            height: 10vh;
+        }
+        section {
+            height: 80vh;
+            font-size: 1rem;
+            width: 100%;
+            align-content: center;
+            overflow: auto;
+        }
+        footer {
+            height: 10vh;
+        }
+
+        input {
+            width: 60vw;
+            height: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .css-title {
+            text-align: center;
+            font-size: 2rem;
+        }
+        .css-hidden {
+            display: none;
+        }
+        .css-alert {
+            color: red;
+        }
+        .css-title-l2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        section label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .submit-container {
+            text-align: center;
+        }
+
+        .css-username {
+            font-size: 2rem;
+            padding: 2rem 0;
+            color: green;
+        }
+        .css-stem {
+            margin: 2rem 0;
+        }
+        img {
+            width: 50vh;
+        }
+        #liveAlertPlaceholder {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+    </style>
+</head>
+<body class="container">
+    <div id="liveAlertPlaceholder" class="align-items-start"></div>
+    <header class="row align-items-center text-center">
+        <div class="col">
+            <p class="">2022 闪马秋冬季产品发布会</p>
+            <p class="css-title">独有千秋</p>
+        </div>
+    </header>
+    <section class="row g-2 align-items-center">
+        <div id="js_qrcode" class="col-12 text-center"></div>
+        <div id="js_operator" class="col-12 text-center">
+            <p>战场信息载入中 ... ...</p>
+        </div>
+    </section>
+    <footer class="row align-items-end">
+        <div>Copyright ©2022 闪马文娱</div>
+    </footer>
+
+<script>
+    let headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    let postBody = {
+        method: 'POST',
+        headers: headers,
+        body: null
+    };
+
+    let userInfo = null;
+    let QB = null;
+    let qIndex = 0;
+    // let warStatus = false;
+
+    (() => {
+        'use strict'
+
+        //  battle field status
+        const es = new EventSource('/service/getstatus');
+        es.addEventListener('message', res => {
+            let data = JSON.parse(res.data);
+            if(data.duyouqianqiu.active) {
+                if(!data.duyouqianqiu.start) {  // 战场已激活，未开启
+                    document.querySelector("#js_operator").innerHTML = `
+                        <div class="d-grid gap-3">
+                            <a class="btn btn-primary btn-lg col-3 mx-auto" href="/admin/dashboard/duyouqianqiu?field=duyouqianqiu" role="button">点击进入战场</a>
+                            <button class="btn btn-danger btn-lg col-3 mx-auto" onclick="endWar()">关闭战场</button>
+                        </div>
+                    `
+                    activateWar();
+                } else {  // 战场已激活，已开启，跳转战场页面
+                    window.location.href = "http://localhost:3000/admin/dashboard?field=duyouqianqiu"
+                }
+            } else {    // 战场未激活
+                document.querySelector("#js_operator").innerHTML = `
+                    <button class="btn btn-primary btn-lg col-3 mx-auto" onclick="activateWar()">开启战场</button>
+                `
+            }
+            // warStatus = (res.data == 'start') ? true : false;
+            console.log(data);
+        });
+
+        const esplayer = new EventSource('/service/getplayerstatus?field=duyouqianqiu');
+        esplayer.addEventListener('message', res => {
+            let data = JSON.parse(res.data);
+            const alertPlaceholder = document.getElementById('liveAlertPlaceholder')
+            
+            for(let i=0; i<data.newplayer.length; i++) {
+                let eid = "id" + new Date().getTime() + '_' + i;
+                const alert = (message, type) => {
+                    const wrapper = document.createElement('div')
+                    wrapper.innerHTML = [
+                        `<div id="${eid}" class="alert alert-${type} alert-dismissible" role="alert">`,
+                        `   <div>${message}</div>`,
+                        '</div>'
+                    ].join('')
+
+                    alertPlaceholder.append(wrapper)
+                }
+                alert(`闪马战士 <span class="css-emphasis">${data.newplayer[i]}</span> 加入战场`, 'success');
+                setTimeout(() => {
+                    document.querySelector(`#${eid}`).remove();
+                }, 3000);
+            }
+            
+            // console.log(data);
+        });
+    })()
+
+
+    function activateWar(){
+        if(document.querySelector("img") != null) return;
+        document.querySelector("#js_operator").innerHTML = `<p>战场开启中... ...</p>`;
+        postBody.body = JSON.stringify({
+            key: 'duyouqianqiu',
+            value: {
+                active: true,
+                start: false, 
+                timer: null
+            }
+        })
+        fetch('/service/changestatus', postBody).then(e => e.json()).then(res => {
+            fetch('/service/battlefieldaddress?field=duyouqianqiu').then(e => e.text()).then(url => {
+                document.querySelector("#js_qrcode").innerHTML = `
+                    <p>战场已开启</p>
+                    <p>扫码进入战场</p>
+                    <img src="${url}" alt="">
+                `
+            });
+        });
+    }
+    
+    function endWar(){
+        document.querySelector("#js_operator").innerHTML = `<p>战场关闭中... ...</p>`;
+        postBody.body = JSON.stringify({
+            key: 'duyouqianqiu',
+            value: {
+                active: false,
+                start: false, 
+                timer: null
+            }
+        })
+        fetch('/service/changestatus', postBody).then(e => e.json()).then(res => {
+            document.querySelector("#js_qrcode").innerHTML = ``
+        });
+    }
+
+</script>
+</body>
+</html>

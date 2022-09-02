@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>独有千秋</title>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <script src="/javascripts/echarts.min.js"></script>
+    <style>
+        body,header,p,section,div {
+            margin: 0;
+            padding: 0;
+            font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+        }
+
+        body {
+            height: 100vh;
+        }
+
+        header {
+            height: 10vh;
+        }
+        section {
+            height: 80vh;
+            font-size: 1rem;
+            width: 100%;
+            overflow: auto;
+        }
+        footer {
+            height: 10vh;
+        }
+
+        input {
+            width: 60vw;
+            height: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .css-title {
+            text-align: center;
+            font-size: 2rem;
+        }
+        .css-hidden {
+            display: none;
+        }
+        .css-alert {
+            color: red;
+        }
+        .css-title-l2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        section label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .submit-container {
+            text-align: center;
+        }
+
+        .css-username {
+            font-size: 2rem;
+            padding: 2rem 0;
+            color: green;
+        }
+        .css-stem {
+            margin: 2rem 0;
+        }
+        .css-hidden {
+            display: none !important;
+        }
+        #liveAlertPlaceholder {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        .css-emphasis {
+            color: #664d03;
+            font-weight: 700;
+        }
+        .css-logo {
+            border-radius: 50px;
+        }
+        .card {
+            border: none !important;
+            margin: 1rem 1rem 0 0;
+        }
+        .card-text {
+            font-size: 0.8rem;
+        }
+        #js_userlist {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        #js_timer_panel {
+            height: 5vh;
+        }
+        #js_button_panel {
+            height: 5vh;
+        }
+        #js_mainboard {
+            height: 70vh;
+        }
+        #js_dashboard {
+            height: 100%;
+            /* overflow-y: auto; */
+        }
+    </style>
+</head>
+<body class="container">
+    <div id="liveAlertPlaceholder" class="align-items-start"></div>
+    <header class="row align-items-center text-center">
+        <div class="col">
+            <p class="">2022 闪马秋冬季产品发布会</p>
+            <p class="css-title">独有千秋</p>
+        </div>
+    </header>
+    <section class="row align-items-start">
+        <div class="col-12 text-center">荣誉榜</div>
+        <div class="col-12 text-center">
+            <table class="table">
+                <thead>
+                    <tr>
+                      <th scope="col">名次</th>
+                      <th scope="col">名字</th>
+                      <th scope="col">得分</th>
+                      <!-- <th scope="col">Handle</th> -->
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+            </table>
+        </div>
+    </section>
+    <footer class="row align-items-end">
+        <div>Copyright ©2022 闪马文娱</div>
+    </footer>
+
+<script>
+    const FIELD = (new URLSearchParams(window.location.href.split('?')[1])).get('field');
+
+    (() => {
+        'use strict'
+
+        fetch('/service/namelist').then(e => e.json()).then(res => {
+            let ids = Object.keys(res);
+            let list = [];
+            for(let i=0; i<ids.length; i++) {
+                list.push({
+                    id: ids[i],
+                    name: res[ids[i]].name,
+                    score: res[ids[i]].score[FIELD]
+                });
+            }
+            list.sort((obj1, obj2) => {
+                if(obj1.score > obj2.score) {
+                    return -1;
+                } else if (obj1.score == obj2.score) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            });
+
+            console.log(list);
+            let tmp = '';
+            for(let i=0; i<list.length; i++) {
+                tmp += `
+                    <tr>
+                        <th scope="row">${i+1}</th>
+                        <td>${list[i].name}（${list[i].id}）</td>
+                        <td>${list[i].score}</td>
+                    </tr>
+                `
+            }
+
+            document.querySelector('table tbody').innerHTML = tmp;
+        })
+    })()
+
+</script>
+</body>
+</html>

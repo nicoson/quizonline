@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>War Field</title>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <!-- <link rel="stylesheet" href="./stylesheet/login.css"> -->
+    <!-- <link rel="stylesheet" href="./libs/css/bootstrap.min.css"> -->
+    <style>
+        body,header,p,section,div {
+            margin: 0;
+            padding: 0;
+            font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+        }
+
+        body {
+            height: 100vh;
+        }
+
+        header {
+            height: 10vh;
+        }
+        section {
+            height: 80vh;
+            font-size: 1rem;
+            width: 100%;
+            overflow: auto;
+        }
+        footer {
+            height: 10vh;
+            font-size: .8rem;
+        }
+
+        input {
+            width: 60vw;
+            height: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .css-title {
+            text-align: center;
+            font-size: 2rem;
+        }
+        .css-hidden {
+            display: none;
+        }
+        .css-alert {
+            color: red;
+        }
+        .css-title-l2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        section label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .submit-container {
+            text-align: center;
+        }
+
+        .css-username {
+            font-size: 2rem;
+            padding: 2rem 0;
+            color: green;
+        }
+        .css-stem {
+            margin: 2rem 0;
+        }
+
+        .css-correct {
+            color: #0f5132 !important;
+            background-color: #d1e7dd !important;
+            border-color: #badbcc !important;
+        }
+        .css-wrong {
+            color: #842029 !important;
+            background-color: #f8d7da !important;
+            border-color: #f5c2c7 !important;
+        }
+    </style>
+</head>
+<body class="container">
+    <header class="row align-items-center text-center">
+        <div class="col">
+            <p class="">2022 闪马秋冬季产品发布会</p>
+            <p class="css-title">独有千秋</p>
+        </div>
+    </header>
+    <section class="row align-items-center">
+        <div id="js_questionbody" class="col-12 text-center">
+            <p>战争一触即发，请候场等待开启！</p>
+        </div>
+    </section>
+    <footer class="row align-items-end text-center">
+        <div>Copyright ©2022 闪马文娱</div>
+    </footer>
+
+<script>
+    const FIELD = (new URLSearchParams(window.location.href.split('?')[1])).get('field');
+    let headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    let postBody = {
+        method: 'POST',
+        headers: headers,
+        body: null
+    };
+
+    let USERINFO = null;
+    let QB = null;
+    let INDEX = 0;
+    let STATUS = false;
+
+    (() => {
+        'use strict'
+
+        if(localStorage.id == undefined || localStorage.name == undefined) {    // 用户未注册
+            window.location.href = '/client/regist';
+        } else {
+            USERINFO = {
+                id: localStorage.id,
+                name: localStorage.name
+            }
+            if(localStorage[FIELD] == undefined) {
+                init();
+            } else {
+                let data = JSON.parse(localStorage[FIELD])
+                QB = data.qb;
+                INDEX = data.index;
+            }
+        }
+
+        checkuser();
+        
+        const es = new EventSource(`/service/getstatus?id=${USERINFO.id}&field=${FIELD}`);
+        es.addEventListener('message', res => {
+            let warStatus = JSON.parse(res.data);
+
+            // if(STATUS == false) {
+            //     STATUS = true;
+            //     nextQuestion();
+            // }
+            // return;
+
+            if(warStatus[FIELD] == undefined){
+                // 战场错误
+            } else if(warStatus[FIELD].active == false) {
+                // 战场未开启
+                
+            } else if(warStatus[FIELD].start == false) {
+                // 游戏未启动
+                if(STATUS == true) {
+                    // 后台关闭游戏，客户端切换状态，为关闭
+                    STATUS = false;
+                    stopQuestion();
+                } else {
+                    // 客户端未启动，状态与后台一致
+                }
+            } else {
+                // 游戏已启动
+                if(STATUS == false) {
+                    // 后台启动，客户端切换状态，启动游戏
+                    STATUS = true;
+                    nextQuestion();
+                } else {
+                    // 客户端已经启动，无变动
+                }
+            }
+            
+            // console.log(warStatus);
+        });
+    })()
+
+
+    function checkuser() {
+        fetch(`/service/checkuser?id=${USERINFO.id}`).then(e => e.json()).then(res => {
+            // alert(res);
+            if(res == false) window.location.href = '/client/regist?refresh=true';
+            // console.log(res);
+        });
+    }
+    
+
+    function init() {
+        localStorage.removeItem(FIELD);//clear();
+        fetch('/service/getquestion').then(e => e.json()).then(data => {
+            QB = data;
+            INDEX = 0;
+            updateLS();
+        });
+    }
+
+    function updateLS() {
+        let data = {
+            qb: QB,
+            index: INDEX
+        }
+        localStorage.setItem(FIELD, JSON.stringify(data));
+    }
+
+    function answer(value) {
+        let node = document.querySelectorAll('#js_questionbody label');
+        node[parseInt(value[1])-1].classList.add('css-correct');
+        if(value[0] != value[1]) {
+            node[parseInt(value[0])-1].classList.add('css-wrong');
+        }
+
+        let score = (value[0] == value[1]) ? 1 : -1;
+        postBody.body = JSON.stringify({
+            key: 'duyouqianqiu',
+            id: USERINFO.id,
+            score: score
+        });
+        setTimeout(() => {
+            fetch('/service/updatescore', postBody).then(e => e.json()).then(res => {
+                updateLS();
+                console.log(res);
+                nextQuestion();
+            });
+        }, 500);
+        
+    }
+
+    function nextQuestion() {
+        INDEX++;
+        let len = QB.length;
+        if(len == 0) {
+            document.querySelector('#js_questionbody').innerHTML = `你太牛了，题目都被你答完了！不要关闭，等候最终排名~`;
+            return;
+        }
+        let ind = Math.floor(Math.random()*len);
+        let q = QB.splice(ind, 1);
+        let template = `
+            <div class="row text-center">
+                <p class="css-title-l2">第 <span id="js_index"> ${INDEX} </span> 题</p>
+            </div>
+            
+            <div class="css-stem">
+                <p>${q[0][0]}</p>
+            </div>
+            <div>`
+
+        for(let i=2; i<q[0].length; i++) {
+            if(q[0][i].length == 0) break;
+            // template += `
+            //     <li class="list-group-item">
+            //         <input class="form-check-input me-1" type="radio" name="listGroupRadio" value="${(i-1)==q[0][1] ? true : false}" id="js_radio_${i-1}" onchange="answer(this.value)">
+            //         <label class="form-check-label stretched-link" for="js_radio_${i-1}">${q[0][i]}</label>
+            //     </li>
+            // `;
+            template += `
+                <input class="btn-check me-1" type="radio" name="listGroupRadio" value="${(i-1)}${q[0][1]}" id="js_radio_${i-1}" onchange="answer(this.value)">
+                <label class="btn btn-outline-primary col-12 mb-3" for="js_radio_${i-1}">${q[0][i]}</label>
+            `
+        }
+
+        template += '</div>';
+        
+        // `
+        //           </ul>
+        //     </form>
+        // `;
+
+        document.querySelector('#js_questionbody').innerHTML = template;
+    }
+
+    function stopQuestion(){
+        // fetch('/service/namelist').then(e => e.json()).then(res => {
+        //     let ids = Object.keys(res);
+        //     let order = 1;
+        //     for(let i=0; i<ids.length; i++) {
+        //         if(res[ids[i]].score[FIELD] > res[USERINFO.id].score[FIELD]) {
+        //             order++;
+        //         }
+        //     }
+        //     document.querySelector('#js_questionbody').innerHTML = `
+        //         <div>战争已结束</div>
+        //         <div>您的最终得分:</div>
+        //         <div>${res[USERINFO.id].score[FIELD]}</div>
+        //         <div>您的最终排名:</div>
+        //         <div>第 ${order} 名</div>
+        //     `;
+        // })
+        window.location.href = '/client/battlereport?field=duyouqianqiu';
+    }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Portal</title>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <!-- <link rel="stylesheet" href="./stylesheet/login.css"> -->
+    <!-- <link rel="stylesheet" href="./libs/css/bootstrap.min.css"> -->
+    <style>
+        body,header,p,section,div {
+            margin: 0;
+            padding: 0;
+            font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+        }
+
+        body {
+            height: 100vh;
+        }
+
+        header {
+            height: 10vh;
+        }
+        section {
+            height: 80vh;
+            font-size: 1rem;
+            width: 100%;
+            overflow: auto;
+        }
+        footer {
+            height: 10vh;
+        }
+
+        input {
+            width: 60vw;
+            height: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .css-title {
+            text-align: center;
+            font-size: 2rem;
+        }
+        .css-hidden {
+            display: none;
+        }
+        .css-alert {
+            color: red;
+        }
+        .css-title-l2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        section label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .submit-container {
+            text-align: center;
+        }
+
+        .css-username {
+            font-size: 2rem;
+            padding: 2rem 0;
+            color: green;
+        }
+        .css-stem {
+            margin: 2rem 0;
+        }
+        #js_game_1, #js_game_2 {
+            font-size: .8rem;
+        }
+    </style>
+</head>
+<body class="container">
+    <header class="row align-items-center text-center">
+        <div class="col">
+            <p class="">2022 闪马秋冬季产品发布会</p>
+            <p class="css-title">战争游戏大厅</p>
+        </div>
+    </header>
+    <section class="row align-items-center">
+        <div>
+            <div class="col-12 text-center">
+                <a class="btn btn-primary btn-lg col-3 mx-auto" href="/admin/duyouqianqiu" role="button">独有千秋<br/><span id="js_game_1"></span></a>
+            </div>
+            <div class="col-12 text-center mt-5">
+                <a class="btn btn-primary btn-lg col-3 mx-auto" href="/admin/bingfengwangzuo" role="button">冰封王座<br/><span id="js_game_2"></span></a>
+            </div>
+        </div>
+    </section>
+    <footer class="row align-items-end">
+        <div>Copyright ©2022 闪马文娱</div>
+    </footer>
+
+<script>
+    let headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    let postBody = {
+        method: 'POST',
+        headers: headers,
+        body: null
+    };
+
+    let userInfo = null;
+    let QB = null;
+    let qIndex = 0;
+    // let warStatus = false;
+
+    (() => {
+        'use strict'
+
+        if(localStorage.qb == undefined) {
+            init();
+        } else {
+            QB = localStorage.qb;
+            qIndex = localStorage.qIndex;
+        }
+    })()
+
+    //  battle field status
+    const es = new EventSource('/service/getstatus');
+    es.addEventListener('message', res => {
+        let data = JSON.parse(res.data);
+        if(data.duyouqianqiu.active) {
+            document.querySelector("#js_game_1").innerHTML = "(战场已激活）"
+        } else {
+            document.querySelector("#js_game_1").innerHTML = "(点击进入激活战场）"
+        }
+        if(data.bingfengwangzuo.active) {
+            document.querySelector("#js_game_2").innerHTML = "(战场已激活）"
+        } else {
+            document.querySelector("#js_game_2").innerHTML = "(点击进入激活战场）"
+        }
+        // warStatus = (res.data == 'start') ? true : false;
+        console.log(data);
+    });
+    
+
+    function init() {
+        localStorage.clear();
+        fetch('/service/getquestion').then(e => e.json()).then(data => {
+            QB = data;
+            qIndex = 0;
+            updateLS();
+        });
+    }
+
+    function updateLS() {
+        localStorage.setItem('qb', QB);
+        localStorage.setItem('qindex', qIndex);
+    }
+
+    function changeme(value) {
+
+        console.log(value);
+    }
+
+</script>
+</body>
+</html>

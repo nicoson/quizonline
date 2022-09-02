@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>regist</title>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <!-- <link rel="stylesheet" href="./stylesheet/login.css"> -->
+    <!-- <link rel="stylesheet" href="./libs/css/bootstrap.min.css"> -->
+    <style>
+        body,header,p,section,div {
+            margin: 0;
+            padding: 0;
+            font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+        }
+
+        body {
+            height: 100vh;
+        }
+
+        header {
+            height: 30vh;
+        }
+        section {
+            height: 60vh;
+            font-size: 1rem;
+            width: 100%;
+            overflow: auto;
+        }
+        footer {
+            height: 10vh;
+            font-size: .8rem;
+        }
+
+        input {
+            width: 60vw;
+            height: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .css-title {
+            text-align: center;
+            font-size: 2rem;
+        }
+        .css-hidden {
+            display: none;
+        }
+        .css-alert {
+            color: red;
+        }
+        .css-title-l2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        section label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .submit-container {
+            text-align: center;
+        }
+
+        .css-username {
+            font-size: 2rem;
+            padding: 2rem 0;
+            color: green;
+        }
+    </style>
+</head>
+<body class="container">
+    <header class="row align-items-center text-center">
+        <div class="col">
+            <p class="css-title">2022 闪马秋冬季</p>
+            <p class="css-title">产品发布会</p>
+        </div>
+    </header>
+    <section class="row align-items-start">
+        <div class="col-12">
+            <div class="row text-center">
+                <p class="css-title-l2">签到台</p>
+            </div>
+            
+            <form class="row needs-validation" novalidate>
+                <div class="col-12">
+                    <div class="form-floating mb-4">
+                        <input id="js_name" type="text" class="form-control" placeholder="请输入真实姓名" required>
+                        <label for="js_name">请输入真实姓名</label>
+                        <div class="invalid-feedback">
+                            姓名不可为空
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="form-floating mb-5">
+                        <input id="js_email" type="text" class="form-control" placeholder="请输入闪马邮箱用户名（无需@supremind.com）" required>
+                        <label for="js_email">请输入闪马邮箱用户名</label>
+                        <div class="invalid-feedback">
+                            用户名不可为空
+                        </div>
+                    </div>
+                </div>
+            </form>
+                
+            <div class="col-12 form-floating mt-5 submit-container">
+                <button id="js_submit" class="btn btn-primary btn-lg col-8 mx-auto">签到</button>
+            </div>
+        </div>
+    </section>
+    <footer class="row align-items-end text-center">
+        <div>Copyright ©2022 闪马文娱</div>
+    </footer>
+
+<script>
+    if(((new URLSearchParams(window.location.href.split('?')[1])).get('refresh')) == 'true') localStorage.clear();
+
+    let headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    let postBody = {
+        method: 'POST',
+        headers: headers,
+        body: null
+    };
+
+    function onSubmit() {
+        return false;
+    }
+
+    var USERINFO = null;
+
+    (() => {
+        'use strict'
+
+        document.querySelector('#js_submit').onclick = (event => {
+            let form = document.querySelector('form');
+            if (!form.checkValidity()) {
+                event.preventDefault()
+                event.stopPropagation()
+            } else {
+                USERINFO = {
+                    name: document.querySelector('#js_name').value,
+                    id: document.querySelector('#js_email').value.split('@')[0]
+                }
+                postBody.body = JSON.stringify(USERINFO);
+                fetch('/service/regist', postBody).then(e => e.json()).then(e => {
+                    // alert('随机丢弃率设置成功');
+                    if(e.code == 200) {
+                        localStorage.id = USERINFO.id;
+                        localStorage.name = USERINFO.name;
+                        document.querySelector('section').innerHTML = `
+                        <div class="col-12 text-center">
+                            <div class="row">
+                                <p class="css-title-l2">签到台</p>
+                            </div>
+                            
+                            <div>
+                                <p>欢迎</p>
+                                <p class="css-username">${USERINFO.name}  (${USERINFO.id})</p>
+                                <p>恭喜您已完成注册！</p>
+                            </div>
+                        </div>
+                        `
+
+                        if(document.referrer != '') {
+                            setTimeout(() => {
+                                window.location.href = document.referrer;
+                            }, 1000);
+                        }
+                    } else {
+                        alert("注册失败，请重试！");
+
+                    }
+                });
+
+            }
+
+            form.classList.add('was-validated');
+        });
+    })()
+
+
+</script>
+</body>
+</html>

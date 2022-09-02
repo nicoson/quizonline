@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+    <script src="/javascripts/echarts.min.js"></script>
+    <style>
+        body,header,p,section,div {
+            margin: 0;
+            padding: 0;
+            font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+        }
+
+        body {
+            height: 100vh;
+        }
+
+        header {
+            height: 10vh;
+        }
+        section {
+            height: 80vh;
+            font-size: 1rem;
+            width: 100%;
+        }
+        footer {
+            height: 10vh;
+        }
+
+        #js_dashboard {
+            height: 70vh;
+            /* overflow-y: auto; */
+        }
+
+        input {
+            width: 60vw;
+            height: 2rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .css-title {
+            text-align: center;
+            font-size: 2rem;
+        }
+        .css-hidden {
+            display: none;
+        }
+        .css-alert {
+            color: red;
+        }
+        .css-title-l2 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        section label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .submit-container {
+            text-align: center;
+        }
+
+        .css-username {
+            font-size: 2rem;
+            padding: 2rem 0;
+            color: green;
+        }
+        .css-stem {
+            margin: 2rem 0;
+        }
+        .css-hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="container">
+    <header class="row align-items-center text-center">
+        <div class="col">
+            <p class="">2022 闪马秋冬季产品发布会</p>
+            <p class="css-title">独有千秋</p>
+        </div>
+    </header>
+    <section class="row align-items-start">
+        <div id="js_timer_panel" class="col-12 text-center css-hidden">
+            <p>倒计时： <span id="js_timer"></span></p>
+        </div>
+        <div id="js_button_panel" class="col-12 text-center">
+            <div class="col-12 text-center">
+                <button id="js_submit" class="btn btn-primary btn-lg col-3 mx-auto" onclick="startWar()">开启战斗</button>
+            </div>
+            <!-- <div class="col-12 text-center mt-5">
+                <button id="js_submit" class="btn btn-primary btn-lg col-3 mx-auto">冰封王座</button>
+            </div> -->
+        </div>
+        <div class="col-12 text-center">
+            <div id="js_dashboard"></div>
+        </div>
+    </section>
+    <footer class="row align-items-end">
+        <div>Copyright ©2022 闪马文娱</div>
+    </footer>
+
+<script>
+    const FIELD = (new URLSearchParams(window.location.href.split('?')[1])).get('field');
+    let headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    let postBody = {
+        method: 'POST',
+        headers: headers,
+        body: null
+    };
+
+    let userInfo = null;
+    let QB = null;
+    let qIndex = 0;
+    // let warStatus = false;
+
+    (() => {
+        'use strict'
+
+        if(localStorage.qb == undefined) {
+            init();
+        } else {
+            QB = localStorage.qb;
+            qIndex = localStorage.qIndex;
+        }
+    })()
+
+
+    const es = new EventSource('/service/getplayerstatus?field=duyouqianqiu');
+    es.addEventListener('message', res => {
+        let data = JSON.parse(res.data);
+        warStatus = (res.data == 'start') ? true : false;
+        console.log(warStatus);
+    });
+    
+
+    function init() {
+        localStorage.clear();
+        fetch('/service/getquestion').then(e => e.json()).then(data => {
+            QB = data;
+            qIndex = 0;
+            updateLS();
+        });
+    }
+
+    function updateLS() {
+        localStorage.setItem('qb', QB);
+        localStorage.setItem('qindex', qIndex);
+    }
+
+    function startWar() {
+        // document.querySelector("#js_operator").innerHTML = `<p>战场开启中... ...</p>`;
+        live();
+        postBody.body = JSON.stringify({
+            key: 'duyouqianqiu',
+            value: {
+                active: true,
+                start: true, 
+            }
+        })
+        fetch('/service/changestatus', postBody).then(e => e.json()).then(res => {
+            // fetch('/service/battlefieldaddress?field=duyouqianqiu').then(e => e.text()).then(url => {
+            //     document.querySelector("#js_qrcode").innerHTML = `
+            //         <p>战场已开启</p>
+            //         <p>扫码进入战场</p>
+            //         <img src="${url}" alt="">
+            //     `
+            // });
+            document.querySelector("#js_timer_panel").classList.remove('css-hidden');
+            document.querySelector("#js_button_panel").classList.add('css-hidden');
+        });
+    }
+
+    function endWar() {
+        // document.querySelector("#js_operator").innerHTML = `<p>战场开启中... ...</p>`;
+        postBody.body = JSON.stringify({
+            key: 'duyouqianqiu',
+            value: {
+                active: true,
+                start: false, 
+            }
+        })
+        fetch('/service/changestatus', postBody).then(e => e.json()).then(res => {
+            // fetch('/service/battlefieldaddress?field=duyouqianqiu').then(e => e.text()).then(url => {
+            //     document.querySelector("#js_qrcode").innerHTML = `
+            //         <p>战场已开启</p>
+            //         <p>扫码进入战场</p>
+            //         <img src="${url}" alt="">
+            //     `
+            // });
+        });
+    }
+
+    function live(data) {
+        countDown();
+        var chartDom = document.getElementById('js_dashboard');
+        var myChart = echarts.init(chartDom);
+        var option;
+
+        // const data = [];
+        // for (let i = 0; i < 26; ++i) {
+        //     data.push(Math.round(Math.random() * 200));
+        // }
+
+
+        option = {
+            xAxis: {
+                max: 'dataMax'
+            },
+            yAxis: {
+                type: 'category',
+                data: [],
+                inverse: true,
+                animationDuration: 300,
+                animationDurationUpdate: 300,
+                max: 20, // only the largest 3 bars will be displayed
+                axisLabel: {
+                    inside: true,
+                    color: '#fff'
+                },
+                z: 10
+            },
+            series: [{
+                realtimeSort: true,
+                name: '分数排行榜',
+                type: 'bar',
+                data: [],
+                label: {
+                    show: true,
+                    position: 'right',
+                    valueAnimation: true
+                },
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                    { offset: 0, color: '#83bff6' },
+                    { offset: 0.5, color: '#188df0' },
+                    { offset: 1, color: '#188df0' }
+                    ])
+                },
+                emphasis: {
+                    itemStyle: {
+                    color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                        { offset: 0, color: '#2378f7' },
+                        { offset: 0.7, color: '#2378f7' },
+                        { offset: 1, color: '#83bff6' }
+                    ])
+                    }
+                }
+            }],
+            legend: {
+                show: true
+            },
+            animationDuration: 0,
+            animationDurationUpdate: 3000,
+            animationEasing: 'linear',
+            animationEasingUpdate: 'linear'
+        };
+
+        
+
+        function run() {
+            getData().then(data => {
+                myChart.setOption({
+                    yAxis: {
+                        data: data.name
+                    },
+                    series: [
+                        {
+                            type: 'bar',
+                            data: data.score
+                        }
+                    ]
+                });
+            })
+        }
+        setTimeout(function () {run();}, 0);
+        setInterval(function () {run();}, 3000);
+
+        option && myChart.setOption(option);
+    }
+
+
+    function countDown(base) {
+        let total = 300;
+        let now = new Date().getTime();
+        base = (base == undefined) ? now : base;
+        let rest = total - Math.ceil((now - base)/1000);
+        if(rest < 0) {
+            endWar();
+        } else {
+            let minite = Math.floor(rest/60);
+            let second = rest%60;
+            document.querySelector("#js_timer").innerHTML = `${(minite>9)?minite:('0'+minite)}:${(second>9)?second:('0'+second)}`;
+            setTimeout(function (){countDown(base)}, 1000);
+        }
+    }
+
+    function getData(){
+        return new Promise(function(resolve, reject) {
+            fetch('/service/namelist').then(e => e.json()).then(res => {
+                let ids = Object.keys(res);
+                let name = []
+                let score = [];
+                for(let i=0; i<ids.length; i++) {
+                    name.push(`${res[ids[i]].name}（${ids[i]}）`);
+                    score.push(res[ids[i]].score[FIELD]);
+                }
+                resolve({
+                    name: name,
+                    score: score
+                });
+            })
+        })
+        
+    }
+
+</script>
+</body>
+</html>
